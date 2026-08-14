@@ -83,7 +83,7 @@ router.post('/register', async (req, res) => {
 
       return res.status(201).json({ 
         success: true, 
-        data: { name: newUser.name, username: newUser.username, email: newUser.email, role: newUser.role } 
+        data: { name: newUser.name, username: newUser.username, email: newUser.email, mobileNumber: newUser.mobileNumber, year: newUser.year, profilePhoto: newUser.profilePhoto || '', role: newUser.role } 
       });
     } else {
       const existingUser = memoryUsers.find(u => 
@@ -111,7 +111,7 @@ router.post('/register', async (req, res) => {
       memoryUsers.push(newUser);
       return res.status(201).json({ 
         success: true, 
-        data: { name: newUser.name, username: newUser.username, email: newUser.email, role: newUser.role } 
+        data: { name: newUser.name, username: newUser.username, email: newUser.email, mobileNumber: newUser.mobileNumber, year: newUser.year, profilePhoto: newUser.profilePhoto || '', role: newUser.role } 
       });
     }
   } catch (error) {
@@ -149,7 +149,7 @@ router.post('/login', async (req, res) => {
 
       return res.json({ 
         success: true, 
-        data: { name: user.name, username: user.username, email: user.email, role: user.role } 
+        data: { name: user.name, username: user.username, email: user.email, mobileNumber: user.mobileNumber, year: user.year, profilePhoto: user.profilePhoto || '', role: user.role } 
       });
     } else {
       const user = memoryUsers.find(u => 
@@ -167,7 +167,7 @@ router.post('/login', async (req, res) => {
 
       return res.json({ 
         success: true, 
-        data: { name: user.name, username: user.username, email: user.email, role: user.role } 
+        data: { name: user.name, username: user.username, email: user.email, mobileNumber: user.mobileNumber, year: user.year, profilePhoto: user.profilePhoto || '', role: user.role } 
       });
     }
   } catch (error) {
@@ -273,6 +273,94 @@ router.post('/reset-password-admin', async (req, res) => {
     }
 
     res.json({ success: true, message: `Password for @${cleanUser} overridden and reset request resolved.` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// PUT /api/auth/profile - Edit user profile (Student/Admin)
+router.put('/profile', async (req, res) => {
+  try {
+    const { username, name, mobileNumber, year, profilePhoto, password } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ success: false, message: "Username is required to identify the user." });
+    }
+
+    const nameRegex = /^[a-zA-Z\s]{2,50}$/;
+    const mobileRegex = /^[0-9]{10}$/;
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{6,}$/;
+
+    if (name && !nameRegex.test(name.trim())) {
+      return res.status(400).json({ success: false, message: "Full Name must contain only letters and spaces (2-50 chars)." });
+    }
+    if (mobileNumber && !mobileRegex.test(mobileNumber.trim())) {
+      return res.status(400).json({ success: false, message: "Mobile Number must be exactly 10 digits." });
+    }
+    if (password && !passwordRegex.test(password)) {
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters, containing at least one letter and one number." });
+    }
+
+    if (User.db && User.db.readyState === 1) {
+      const user = await User.findOne({ username });
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found." });
+      }
+
+      if (name) user.name = name.trim();
+      if (mobileNumber) user.mobileNumber = mobileNumber.trim();
+      if (year) user.year = year.trim();
+      if (profilePhoto !== undefined) user.profilePhoto = profilePhoto;
+      if (password) {
+        user.password = password; // pre-save hook hashes it automatically
+      }
+
+      await user.save();
+
+      return res.json({
+        success: true,
+        message: "Profile updated successfully.",
+        data: {
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          mobileNumber: user.mobileNumber,
+          year: user.year,
+          profilePhoto: user.profilePhoto || '',
+          role: user.role
+        }
+      });
+    } else {
+      // In-memory fallback
+      const userIdx = memoryUsers.findIndex(u => u.username === username);
+      if (userIdx === -1) {
+        return res.status(404).json({ success: false, message: "User not found." });
+      }
+
+      const user = memoryUsers[userIdx];
+      if (name) user.name = name.trim();
+      if (mobileNumber) user.mobileNumber = mobileNumber.trim();
+      if (year) user.year = year.trim();
+      if (profilePhoto !== undefined) user.profilePhoto = profilePhoto;
+      if (password) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(password, salt);
+      }
+
+      return res.json({
+        success: true,
+        message: "Profile updated successfully.",
+        data: {
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          mobileNumber: user.mobileNumber,
+          year: user.year,
+          profilePhoto: user.profilePhoto || '',
+          role: user.role
+        }
+      });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

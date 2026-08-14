@@ -42,8 +42,12 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout 
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.5rem', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '1rem' }}>
-            <span style={{ fontSize: '0.9rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 600 }}>
-              <User size={15} color="#06B6D4" />
+            <span style={{ fontSize: '0.9rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
+              {currentUser?.profilePhoto ? (
+                <img src={currentUser.profilePhoto} alt="Avatar" style={{ width: '22px', height: '22px', borderRadius: '50%', objectFit: 'cover', border: '1.5px solid var(--primary)' }} />
+              ) : (
+                <User size={15} color="#06B6D4" />
+              )}
               {currentUser.name || currentUser}
             </span>
             <button

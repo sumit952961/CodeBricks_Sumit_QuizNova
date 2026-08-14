@@ -187,3 +187,16 @@ export const resetPasswordAdmin = async (username, newPassword) => {
   }
   return res.json();
 };
+
+export const updateProfile = async (profileData) => {
+  const res = await fetch(`${API_BASE}/auth/profile`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profileData)
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || 'Failed to update profile');
+  }
+  return res.json();
+};

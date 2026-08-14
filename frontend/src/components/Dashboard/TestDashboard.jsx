@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Code, Layers, Database, Play, Sparkles, CheckCircle2 } from 'lucide-react';
+import { BookOpen, Code, Layers, Database, Play, Sparkles, CheckCircle2, Settings, User } from 'lucide-react';
 import { fetchUserScores, fetchTests } from '../../services/api';
+import EditProfileModal from './EditProfileModal';
 
 const getIconForTest = (name) => {
   const n = (name || '').toLowerCase();
@@ -11,31 +12,25 @@ const getIconForTest = (name) => {
   return { icon: BookOpen, color: '#06B6D4' };
 };
 
-export default function TestDashboard({ currentUser, onSelectTest }) {
+export default function TestDashboard({ currentUser, onSelectTest, onProfileUpdated }) {
   const [tests, setTests] = useState([]);
   const [completedTests, setCompletedTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showEditProfile, setShowEditProfile] = useState(false);
 
   useEffect(() => {
     const loadDashboardData = async () => {
-      setLoading(true);
-      setError('');
       try {
-        // Fetch dynamic tests
-        const testsRes = await fetchTests();
+        setLoading(true);
+        const [testsRes, scoresRes] = await Promise.all([
+          fetchTests(),
+          fetchUserScores(currentUser.username)
+        ]);
         setTests(testsRes.data || []);
-
-        // Fetch completed tests
-        if (currentUser && currentUser.username) {
-          const scoresRes = await fetchUserScores(currentUser.username);
-          if (scoresRes.data) {
-            const completed = scoresRes.data.map(score => score.testName);
-            setCompletedTests(completed);
-          }
-        }
+        setCompletedTests((scoresRes.data || []).map(s => s.testName));
       } catch (err) {
-        setError('Failed to load dashboard data.');
+        setError(err.message || 'Failed to load dashboard.');
       } finally {
         setLoading(false);
       }
@@ -48,15 +43,36 @@ export default function TestDashboard({ currentUser, onSelectTest }) {
     <div style={{ maxWidth: '950px', margin: '2rem auto' }}>
       
       {/* Welcome Banner */}
-      <div className="glass-panel" style={{ padding: '2.5rem', marginBottom: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem', flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <Sparkles size={24} color="#6366F1" />
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Welcome back, {currentUser?.name || 'Developer'}!</h2>
+      <div className="glass-panel" style={{ padding: '2.5rem', marginBottom: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+          {/* Avatar frame */}
+          <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '3px solid var(--primary)', boxShadow: '0 0 15px rgba(99, 102, 241, 0.3)' }}>
+            {currentUser?.profilePhoto ? (
+              <img src={currentUser.profilePhoto} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}>
+                <User size={36} />
+              </div>
+            )}
           </div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1rem', maxWidth: '600px' }}>
-            Select an assessment topic from the dashboard below to test your programming skills. Your score will be saved automatically to the leaderboard.
-          </p>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Welcome back, {currentUser?.name || 'Developer'}!</h2>
+              <button 
+                onClick={() => setShowEditProfile(true)}
+                title="Edit Profile"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.45rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#6366F1'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+              >
+                <Settings size={18} />
+              </button>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '1rem', maxWidth: '600px' }}>
+              Select an assessment topic from the dashboard below to test your programming skills. Your score will be saved automatically to the leaderboard.
+            </p>
+          </div>
         </div>
 
         <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '0.8rem 1.2rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
@@ -64,6 +80,14 @@ export default function TestDashboard({ currentUser, onSelectTest }) {
           <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'white' }}>{currentUser?.year || '1st Year'}</div>
         </div>
       </div>
+
+      {showEditProfile && (
+        <EditProfileModal 
+          currentUser={currentUser} 
+          onClose={() => setShowEditProfile(false)} 
+          onProfileUpdated={onProfileUpdated} 
+        />
+      )}
 
       <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
         Available Assessments

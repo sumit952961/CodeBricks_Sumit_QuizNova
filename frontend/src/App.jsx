@@ -61,6 +61,11 @@ export default function App() {
     }
   };
 
+  const handleProfileUpdated = (updatedData) => {
+    localStorage.setItem('quiz_user', JSON.stringify(updatedData));
+    setCurrentUser(updatedData);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('quiz_user');
     setCurrentUser(null);
@@ -161,7 +166,7 @@ export default function App() {
                   )}
 
                   {!loading && !error && quizState === 'setup' && (
-                    <TestDashboard currentUser={currentUser} onSelectTest={handleSelectTest} />
+                    <TestDashboard currentUser={currentUser} onSelectTest={handleSelectTest} onProfileUpdated={handleProfileUpdated} />
                   )}
 
                   {!loading && !error && quizState === 'active' && questions.length > 0 && (
