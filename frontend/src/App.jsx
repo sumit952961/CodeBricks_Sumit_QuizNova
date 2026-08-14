@@ -51,7 +51,11 @@ export default function App() {
   };
 
   const handleAuthSuccess = (userData) => {
-    localStorage.setItem('quiz_user', JSON.stringify(userData));
+    try {
+      localStorage.setItem('quiz_user', JSON.stringify(userData));
+    } catch (e) {
+      console.warn("Storage quota exceeded:", e);
+    }
     setCurrentUser(userData);
     setQuizState('setup');
     if (userData.role === 'admin') {
@@ -62,7 +66,11 @@ export default function App() {
   };
 
   const handleProfileUpdated = (updatedData) => {
-    localStorage.setItem('quiz_user', JSON.stringify(updatedData));
+    try {
+      localStorage.setItem('quiz_user', JSON.stringify(updatedData));
+    } catch (e) {
+      console.warn("Storage quota exceeded:", e);
+    }
     setCurrentUser(updatedData);
   };
 

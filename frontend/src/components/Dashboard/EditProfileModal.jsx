@@ -16,14 +16,21 @@ export default function EditProfileModal({ currentUser, onClose, onProfileUpdate
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 1 * 1024 * 1024) { // 1MB limit for optimal DB storage
-        setError('Image size must be less than 1MB.');
-        return;
-      }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfilePhoto(reader.result);
-        setError('');
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 120;
+          canvas.width = maxDim;
+          canvas.height = maxDim;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, maxDim, maxDim);
+          const compressed = canvas.toDataURL('image/jpeg', 0.7);
+          setProfilePhoto(compressed);
+          setError('');
+        };
+        img.src = reader.result;
       };
       reader.readAsDataURL(file);
     }
