@@ -2,6 +2,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import questionRoutes from './routes/questionRoutes.js';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
 import authRoutes from './routes/authRoutes.js';
@@ -36,6 +38,20 @@ app.get('/api/health', (req, res) => {
     database: dbConnected ? 'MongoDB Connected' : 'In-Memory Engine (Fallback)',
     timestamp: new Date().toISOString()
   });
+});
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve frontend build static files
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// Fallback all non-API GET requests to serve frontend SPA index.html
+app.get('*', (req, res) => {
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(404).json({ success: false, message: 'API Route Not Found' });
+  }
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
 
 // Database Seed Function
