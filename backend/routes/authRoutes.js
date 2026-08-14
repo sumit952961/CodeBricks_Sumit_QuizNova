@@ -178,42 +178,50 @@ router.post('/login', async (req, res) => {
 // POST /api/auth/forgot-password - Student Forgot Password submission
 router.post('/forgot-password', async (req, res) => {
   try {
-    const { username, email } = req.body;
-    if (!username || !email) {
-      return res.status(400).json({ success: false, message: "Please provide both username and email." });
+    const { usernameOrEmail } = req.body;
+    if (!usernameOrEmail) {
+      return res.status(400).json({ success: false, message: "Please provide your username or email." });
     }
 
-    const cleanUser = username.trim();
-    const cleanEmail = email.trim().toLowerCase();
+    const cleanInput = usernameOrEmail.trim();
 
     if (User.db && User.db.readyState === 1) {
-      const user = await User.findOne({ username: cleanUser, email: cleanEmail });
+      const user = await User.findOne({
+        $or: [
+          { username: cleanInput },
+          { email: cleanInput.toLowerCase() }
+        ]
+      });
+
       if (!user) {
-        return res.status(400).json({ success: false, message: "Invalid username or email combination." });
+        return res.status(400).json({ success: false, message: "No registered user found with this username or email." });
       }
 
       // Check if a request already exists
-      const existing = await ResetRequest.findOne({ username: cleanUser, resolved: false });
+      const existing = await ResetRequest.findOne({ username: user.username, resolved: false });
       if (!existing) {
         await ResetRequest.create({
-          username: cleanUser,
-          email: cleanEmail,
+          username: user.username,
+          email: user.email,
           fullName: user.name,
           resolved: false
         });
       }
     } else {
-      const user = memoryUsers.find(u => u.username === cleanUser && u.email === cleanEmail);
+      const user = memoryUsers.find(u => 
+        u.username === cleanInput || u.email === cleanInput.toLowerCase()
+      );
+
       if (!user) {
-        return res.status(400).json({ success: false, message: "Invalid username or email combination." });
+        return res.status(400).json({ success: false, message: "No registered user found with this username or email." });
       }
 
-      const existing = memoryResetRequests.find(r => r.username === cleanUser && !r.resolved);
+      const existing = memoryResetRequests.find(r => r.username === user.username && !r.resolved);
       if (!existing) {
         memoryResetRequests.push({
           _id: `mem_rr_${Date.now()}`,
-          username: cleanUser,
-          email: cleanEmail,
+          username: user.username,
+          email: user.email,
           fullName: user.name,
           resolved: false,
           createdAt: new Date().toISOString()
@@ -221,7 +229,7 @@ router.post('/forgot-password', async (req, res) => {
       }
     }
 
-    res.json({ success: true, message: "Your password reset request has been received. Admin will send your credentials to your registered email address within 24 hours." });
+    res.json({ success: true, message: "Password reset request submitted successfully. Please ask your Admin to override your password." });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

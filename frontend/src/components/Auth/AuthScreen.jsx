@@ -87,15 +87,14 @@ export default function AuthScreen({ onAuthSuccess }) {
         setPassword('');
         setUsernameOrEmail(username.trim());
       } else if (authMode === 'forgot') {
-        if (!username.trim() || !email.trim()) {
-          setError('Please fill in both fields.');
+        if (!usernameOrEmail.trim()) {
+          setError('Please enter your username or email.');
           setLoading(false);
           return;
         }
-        const res = await forgotPassword(username.trim(), email.trim().toLowerCase());
+        const res = await forgotPassword(usernameOrEmail.trim());
         setSuccessMsg(res.message);
-        setUsername('');
-        setEmail('');
+        setUsernameOrEmail('');
       }
     } catch (err) {
       setError(err.message || 'Authentication failed. Please try again.');
@@ -378,34 +377,16 @@ export default function AuthScreen({ onAuthSuccess }) {
             <>
               <div>
                 <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  Username
+                  Username or Email Address
                 </label>
                 <div style={{ position: 'relative' }}>
                   <User size={16} color="var(--text-dim)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
                   <input
                     type="text"
                     className="input-field"
-                    placeholder="Enter registered username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    style={{ paddingLeft: '2.5rem' }}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  Registered Email Address
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <Mail size={16} color="var(--text-dim)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input
-                    type="email"
-                    className="input-field"
-                    placeholder="Enter registered email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter registered username or email"
+                    value={usernameOrEmail}
+                    onChange={(e) => setUsernameOrEmail(e.target.value)}
                     style={{ paddingLeft: '2.5rem' }}
                     required
                   />

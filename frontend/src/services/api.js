@@ -156,11 +156,11 @@ export const fetchAdminLeaderboard = async () => {
   return res.json();
 };
 
-export const forgotPassword = async (username, email) => {
+export const forgotPassword = async (usernameOrEmail) => {
   const res = await fetch(`${API_BASE}/auth/forgot-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, email })
+    body: JSON.stringify({ usernameOrEmail })
   });
   if (!res.ok) {
     const err = await res.json();
