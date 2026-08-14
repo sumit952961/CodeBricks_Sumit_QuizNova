@@ -189,6 +189,10 @@ export default function App() {
             </>
           )}
         </main>
+
+        <footer style={{ textAlign: 'center', padding: '1.5rem 1rem', borderTop: '1px solid var(--border-color)', marginTop: '3rem', color: 'var(--text-dim)', fontSize: '0.85rem' }}>
+          © 2026 QuizNova. All Rights Reserved.
+        </footer>
       </div>
     </div>
   );
